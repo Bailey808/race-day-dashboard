@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Race Day Intelligence | Laura Bailey</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Race Day">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231a1a1a'/%3E%3Ccircle cx='256' cy='220' r='148' fill='none' stroke='%23B8982A' stroke-width='14'/%3E%3Ccircle cx='256' cy='220' r='124' fill='none' stroke='%23B8982A' stroke-width='2.5' stroke-dasharray='10 7'/%3E%3Ctext x='256' y='272' font-family='Georgia,serif' font-size='130' font-weight='bold' fill='%23B8982A' text-anchor='middle'%3ELB%3C/text%3E%3Crect x='222' y='356' width='22' height='80' rx='5' fill='%23C42B2B'/%3E%3Crect x='248' y='356' width='22' height='80' rx='5' fill='%23B8982A'/%3E%3Crect x='274' y='356' width='16' height='80' rx='5' fill='%231A7A47'/%3E%3Ccircle cx='256' cy='368' r='18' fill='%231a1a1a' stroke='%23B8982A' stroke-width='5'/%3E%3Ctext x='256' y='470' font-family='Georgia,serif' font-size='26' fill='%23B8982A' text-anchor='middle' letter-spacing='7'%3ERACE DAY%3C/text%3E%3Ctext x='256' y='500' font-family='Georgia,serif' font-size='18' fill='%23B8982A' opacity='0.6' text-anchor='middle' letter-spacing='4'%3E31 MAY 2026%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231a1a1a'/%3E%3Ccircle cx='256' cy='220' r='148' fill='none' stroke='%23B8982A' stroke-width='14'/%3E%3Ccircle cx='256' cy='220' r='124' fill='none' stroke='%23B8982A' stroke-width='2.5' stroke-dasharray='10 7'/%3E%3Ctext x='256' y='272' font-family='Georgia,serif' font-size='130' font-weight='bold' fill='%23B8982A' text-anchor='middle'%3ELB%3C/text%3E%3Crect x='222' y='356' width='22' height='80' rx='5' fill='%23C42B2B'/%3E%3Crect x='248' y='356' width='22' height='80' rx='5' fill='%23B8982A'/%3E%3Crect x='274' y='356' width='16' height='80' rx='5' fill='%231A7A47'/%3E%3Ccircle cx='256' cy='368' r='18' fill='%231a1a1a' stroke='%23B8982A' stroke-width='5'/%3E%3Ctext x='256' y='470' font-family='Georgia,serif' font-size='26' fill='%23B8982A' text-anchor='middle' letter-spacing='7'%3ERACE DAY%3C/text%3E%3Ctext x='256' y='500' font-family='Georgia,serif' font-size='18' fill='%23B8982A' opacity='0.6' text-anchor='middle' letter-spacing='4'%3E31 MAY 2026%3C/text%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&family=Oswald:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f8f6f1; font-family: 'DM Sans', sans-serif; font-size: 16px; }
+    input[type=range] { width: 100%; cursor: pointer; }
+    button { font-family: 'DM Sans', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    const STRAVA_CLIENT_ID = "230220";
+    const STRAVA_CLIENT_SECRET = "917e437903069e4125c34c7f562864a5f5ad39e4";
+    const STRAVA_AUTH_CODE = "dde6185a6e8a62e0b230999c9192fb8505f21d80";
+    const RACE_DATE = new Date("2026-05-31T09:00:00");
+    const PB_SECS = 7320;
+    const VFLY_TARGET = 25;
+    const LAT = 53.6097;
+    const LON = -2.1616;
+
+    const C = {
+      bg:"#f8f6f1", card:"#ffffff",
+      gold:"#B8982A", goldL:"#F4EBC8", goldD:"#8A7010",
+      green:"#1A7A47", greenL:"#E8F5EE",
+      amber:"#C96000", amberL:"#FFF2E5",
+      red:"#C42B2B", redL:"#FDEAEA",
+      pink:"#B83A62", pinkL:"#FCEEF4",
+      blue:"#1A5C9A", blueL:"#E8F0FA",
+      text:"#1a1a1a", mid:"#444444", muted:"#888888",
+      border:"#e4dfd4", borderL:"#f0ece3",
+      shadow:"0 2px 20px rgba(0,0,0,0.06)",
+      shadowG:"0 4px 28px rgba(184,152,42,0.22)",
+      fR:"'Raleway',sans-serif",
+      fN:"'Oswald','Arial Narrow',sans-serif",
+      fB:"'DM Sans',sans-serif"
+    };
+    const sc = {green:C.green, amber:C.amber, red:C.red};
+    const sb = {green:C.greenL, amber:C.amberL, red:C.redL};
+
+    const spk = mps => { if(!mps) return "--:--"; const s=1000/mps; return `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`; };
+    const sts = s => { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`; };
+    const daysTo = d => Math.ceil((d - new Date()) / 86400000);
+
+    const strPost = b => fetch("https://www.strava.com/oauth/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}).then(r=>r.json());
+    const getActs = t => fetch("https://www.strava.com/api/v3/athlete/activities?per_page=50",{headers:{Authorization:`Bearer ${t}`}}).then(r=>r.json());
+
+    const wkStats = acts => {
+      const cut=Date.now()-7*86400000, runs=acts.filter(a=>a.type==="Run"&&new Date(a.start_date)>cut);
+      const km=runs.reduce((s,r)=>s+r.distance/1000,0);
+      const cads=runs.filter(r=>r.average_cadence).map(r=>r.average_cadence*2);
+      return {runs,km,cad:cads.length?cads.reduce((a,b)=>a+b,0)/cads.length:0,count:runs.length};
+    };
+    const calcACWR = acts => {
+      const now=Date.now(), runs=acts.filter(a=>a.type==="Run");
+      const ac=runs.filter(a=>now-new Date(a.start_date)<7*86400000).reduce((s,r)=>s+r.distance/1000,0);
+      const ch=runs.filter(a=>now-new Date(a.start_date)<28*86400000).reduce((s,r)=>s+r.distance/1000,0)/4;
+      return {ratio:ch>0?ac/ch:1.0,ac,ch};
+    };
+    const predict = acts => {
+      const r=acts.filter(a=>a.type==="Run"&&a.distance>3000).slice(0,8);
+      if(!r.length) return null;
+      return Math.round(21097.5/(r.reduce((s,x)=>s+x.average_speed,0)/r.length*1.04));
+    };
+
+    const DEMO=[
+      {type:"Run",name:"Morning Run",distance:6200,average_speed:2.78,average_cadence:84,start_date:new Date(Date.now()-86400000).toISOString()},
+      {type:"Run",name:"Easy Recovery",distance:4800,average_speed:2.65,average_cadence:82,start_date:new Date(Date.now()-3*86400000).toISOString()},
+      {type:"Run",name:"Tempo Run",distance:7500,average_speed:2.92,average_cadence:86,start_date:new Date(Date.now()-5*86400000).toISOString()},
+      {type:"Run",name:"Long Run",distance:12000,average_speed:2.71,average_cadence:83,start_date:new Date(Date.now()-8*86400000).toISOString()},
+    ];
+
+    // ── Weather helpers ────────────────────────────────────────────────────
+    const getRunScore = (temp, rain, wind) => {
+      if(rain > 3 || wind > 30) return "red";
+      if(temp < 5 || temp > 22 || rain > 1 || wind > 20) return "amber";
+      return "green";
+    };
+
+    const getLocationAdvice = (sessionType, distKm) => {
+      if(!sessionType) return null;
+      const type = sessionType.toLowerCase();
+      if(type.includes("tempo") || type.includes("threshold") || type.includes("interval") || type.includes("speed")) {
+        return { location: "Track", reason: "Precise distance & flat surface needed for pace work", emoji: "🏟️" };
+      }
+      if(type.includes("long") || distKm >= 8) {
+        return { location: "10km Road Loop", reason: "Long steady effort suits your full loop", emoji: "🛣️" };
+      }
+      if(type.includes("recovery") || type.includes("easy") || distKm < 5) {
+        return { location: "Parkrun Route", reason: "Short recovery run — flat familiar route, easy to cut short", emoji: "🌳" };
+      }
+      if(type.includes("base") || (distKm >= 5 && distKm < 8)) {
+        return { location: "Parkrun Route", reason: "Good distance for the park loop — manageable and measurable", emoji: "🌳" };
+      }
+      return { location: "10km Road Loop", reason: "Steady effort suits road running", emoji: "🛣️" };
+    };
+
+    const getBestWindow = hourly => {
+      if(!hourly || !hourly.length) return "Check forecast closer to run time";
+      const goodHours = hourly.filter(h => h.rain < 0.5 && h.temp >= 7 && h.temp <= 18 && h.wind < 20);
+      if(!goodHours.length) return "Conditions challenging all day — morning is best";
+      const morningGood = goodHours.find(h => h.hour >= 6 && h.hour <= 10);
+      const middayGood = goodHours.find(h => h.hour >= 10 && h.hour <= 14);
+      const eveningGood = goodHours.find(h => h.hour >= 17 && h.hour <= 20);
+      if(morningGood) return `Morning (${morningGood.hour}:00–${morningGood.hour+2}:00) — ideal conditions`;
+      if(middayGood) return `Midday (${middayGood.hour}:00–${middayGood.hour+2}:00) — dry window`;
+      if(eveningGood) return `Evening (${eveningGood.hour}:00–${eveningGood.hour+2}:00) — conditions improve`;
+      return "Flexible — check hourly before heading out";
+    };
+
+    // ── Components ─────────────────────────────────────────────────────────
+    const Card = ({children,gold,pink,blue,style={}}) => (
+      <div style={{background:C.card,border:`1px solid ${gold?C.gold+"99":pink?C.pink+"55":blue?C.blue+"55":C.border}`,borderRadius:18,padding:"20px 22px",boxShadow:gold?C.shadowG:C.shadow,...style}}>
+        {children}
+      </div>
+    );
+    const STitle = ({children,color}) => <h2 style={{fontFamily:C.fR,fontSize:24,fontWeight:700,color:color||C.text,marginBottom:18,letterSpacing:"-0.2px"}}>{children}</h2>;
+    const CTitle = ({children,color}) => <div style={{fontFamily:C.fR,fontSize:11,fontWeight:700,letterSpacing:1.8,color:color||C.muted,textTransform:"uppercase",marginBottom:10}}>{children}</div>;
+    const Big = ({n,unit,color,size=48}) => <div style={{display:"flex",alignItems:"baseline",gap:5}}><span style={{fontFamily:C.fN,fontSize:size,fontWeight:400,color:color||C.text,lineHeight:1}}>{n}</span>{unit&&<span style={{fontFamily:C.fB,fontSize:13,color:C.muted}}>{unit}</span>}</div>;
+    const Bar = ({pct,color=C.gold,bg=C.goldL}) => <div style={{height:8,background:bg,borderRadius:4}}><div style={{height:"100%",width:`${Math.min(100,Math.max(0,pct))}%`,background:color,borderRadius:4,transition:"width 1.2s ease"}}/></div>;
+    const Pill = ({children,color=C.gold,bg=C.goldL}) => <span style={{display:"inline-flex",alignItems:"center",padding:"5px 14px",background:bg,color,borderRadius:20,fontSize:12,fontWeight:600,fontFamily:C.fB}}>{children}</span>;
+    const Dot = ({s}) => <span style={{display:"inline-block",width:9,height:9,borderRadius:"50%",background:sc[s]||C.amber,marginRight:7}}/>;
+    const Divider = () => <div style={{height:1,background:C.borderL,margin:"10px 0"}}/>;
+    const Body = ({children,size=14,color,style={}}) => <div style={{fontFamily:C.fB,fontSize:size,color:color||C.mid,lineHeight:1.7,...style}}>{children}</div>;
+
+    const Gauge = ({val}) => {
+      const r=52,ci=2*Math.PI*r,col=val>=70?C.green:val>=50?C.amber:C.red,bg=val>=70?C.greenL:val>=50?C.amberL:C.redL;
+      return <div style={{position:"relative",width:140,height:140}}>
+        <svg width={140} height={140} style={{transform:"rotate(-90deg)"}}>
+          <circle cx={70} cy={70} r={r} fill="none" stroke={bg} strokeWidth={10}/>
+          <circle cx={70} cy={70} r={r} fill="none" stroke={col} strokeWidth={10} strokeDasharray={ci} strokeDashoffset={ci-(val/100)*ci} strokeLinecap="round" style={{transition:"stroke-dashoffset 1.2s ease"}}/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <span style={{fontFamily:C.fN,fontSize:40,color:col,lineHeight:1}}>{val}</span>
+          <span style={{fontFamily:C.fB,fontSize:12,color:C.muted,marginTop:3}}>/100</span>
+        </div>
+      </div>;
+    };
+
+    // ── Weather Panel ──────────────────────────────────────────────────────
+    function WeatherPanel({sessionType, sessionDist}) {
+      const [weather, setWeather] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        (async () => {
+          try {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,precipitation,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weathercode&timezone=Europe%2FLondon&forecast_days=7`;
+            const r = await fetch(url);
+            const d = await r.json();
+
+            const today = new Date();
+            const todayIdx = 0;
+            const days = d.daily.time.map((date, i) => {
+              const dayDate = new Date(date);
+              const dayName = i === 0 ? "Today" : i === 1 ? "Tomorrow" : dayDate.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"});
+              const tempMax = Math.round(d.daily.temperature_2m_max[i]);
+              const tempMin = Math.round(d.daily.temperature_2m_min[i]);
+              const rain = d.daily.precipitation_sum[i];
+              const wind = Math.round(d.daily.windspeed_10m_max[i]);
+              const score = getRunScore(tempMax, rain, wind);
+
+              // Hourly for today/tomorrow
+              const hourlyStart = i * 24;
+              const hourly = d.hourly.time.slice(hourlyStart, hourlyStart+24).map((t, j) => ({
+                hour: new Date(t).getHours(),
+                temp: Math.round(d.hourly.temperature_2m[hourlyStart+j]),
+                rain: d.hourly.precipitation[hourlyStart+j],
+                wind: Math.round(d.hourly.windspeed_10m[hourlyStart+j])
+              }));
+
+              return {date, dayName, tempMax, tempMin, rain, wind, score, hourly};
+            });
+
+            setWeather(days);
+          } catch(e) {
+            setWeather(null);
+          }
+          setLoading(false);
+        })();
+      }, []);
+
+      if(loading) return <Card blue><CTitle color={C.blue}>Today's Running Conditions — Rochdale OL11</CTitle><Body color={C.muted}>Loading weather...</Body></Card>;
+      if(!weather) return <Card><CTitle>Weather</CTitle><Body color={C.muted}>Unable to load forecast. Check weather-forecast.com for Rochdale.</Body></Card>;
+
+      const today = weather[0];
+      const runScore = today.score;
+      const bestWindow = getBestWindow(today.hourly);
+      const location = sessionType ? getLocationAdvice(sessionType, sessionDist) : null;
+
+      const scoreLabel = runScore === "green" ? "Great day to run" : runScore === "amber" ? "Run with caution" : "Consider rest day";
+      const scoreColor = sc[runScore];
+      const scoreBg = sb[runScore];
+
+      const weatherIcon = today.rain > 3 ? "🌧️" : today.rain > 0.5 ? "🌦️" : today.tempMax > 18 ? "☀️" : today.tempMax > 12 ? "⛅" : "🌤️";
+
+      return <div>
+        {/* TODAY */}
+        <Card blue style={{marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+            <div>
+              <CTitle color={C.blue}>Today's Conditions — Rochdale OL11</CTitle>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:36}}>{weatherIcon}</span>
+                <div>
+                  <Big n={`${today.tempMax}°`} unit={`/ ${today.tempMin}°C`} size={36} color={C.text}/>
+                  <Body size={12} color={C.muted} style={{marginTop:2}}>
+                    {today.rain > 0 ? `${today.rain}mm rain · ` : "Dry · "}{today.wind}km/h wind
+                  </Body>
+                </div>
+              </div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{width:56,height:56,borderRadius:"50%",background:scoreBg,border:`3px solid ${scoreColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                {runScore==="green"?"✓":runScore==="amber"?"!":"✕"}
+              </div>
+              <Body size={10} color={scoreColor} style={{marginTop:5,fontWeight:700,textAlign:"center",maxWidth:60}}>{scoreLabel}</Body>
+            </div>
+          </div>
+
+          <div style={{background:C.blueL,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+            <Body size={12} color={C.blue} style={{fontWeight:600,marginBottom:4}}>⏰ Best time to run</Body>
+            <Body size={13}>{bestWindow}</Body>
+          </div>
+
+          {location && <div style={{background:C.bg,borderRadius:12,padding:"12px 14px"}}>
+            <Body size={12} color={C.mid} style={{fontWeight:600,marginBottom:4}}>📍 Recommended location</Body>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{fontSize:20}}>{location.emoji}</span>
+              <Body size={14} style={{fontWeight:700,color:C.text}}>{location.location}</Body>
+            </div>
+            <Body size={12} color={C.muted}>{location.reason}</Body>
+          </div>}
+
+          {!location && <div style={{background:C.bg,borderRadius:12,padding:"12px 14px"}}>
+            <Body size={12} color={C.mid} style={{fontWeight:600,marginBottom:6}}>📍 Location guide</Body>
+            {[
+              {e:"🌳",l:"Parkrun Route",r:"Recovery runs + short speed work (under 5km)"},
+              {e:"🛣️",l:"10km Road Loop",r:"Base runs + long runs (5km+)"},
+              {e:"🏟️",l:"Track",r:"Tempo, threshold + interval sessions"},
+            ].map(({e,l,r},i)=>(
+              <div key={i} style={{display:"flex",gap:10,padding:"6px 0",borderTop:i>0?`1px solid ${C.borderL}`:"none",alignItems:"flex-start"}}>
+                <span style={{fontSize:16,marginTop:2}}>{e}</span>
+                <div><Body size={12} style={{fontWeight:600,color:C.text}}>{l}</Body><Body size={11} color={C.muted}>{r}</Body></div>
+              </div>
+            ))}
+          </div>}
+        </Card>
+
+        {/* 7-DAY FORECAST */}
+        <Card style={{marginBottom:14}}>
+          <CTitle>7-Day Forecast — Rochdale OL11</CTitle>
+          {weather.map((day, i) => {
+            const icon = day.rain > 3 ? "🌧️" : day.rain > 0.5 ? "🌦️" : day.tempMax > 18 ? "☀️" : day.tempMax > 12 ? "⛅" : "🌤️";
+            return <div key={i}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
+                  <span style={{fontSize:18,width:24}}>{icon}</span>
+                  <div>
+                    <Body size={13} style={{fontWeight:i===0?700:400,color:i===0?C.text:C.mid}}>{day.dayName}</Body>
+                    <Body size={11} color={C.muted}>{day.rain > 0 ? `${day.rain}mm · ` : "Dry · "}{day.wind}km/h</Body>
+                  </div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <Body size={13} color={C.mid}>{day.tempMax}°/{day.tempMin}°</Body>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:sb[day.score],border:`2px solid ${sc[day.score]}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:sc[day.score],fontWeight:700}}>
+                    {day.score==="green"?"✓":day.score==="amber"?"!":"✕"}
+                  </div>
+                </div>
+              </div>
+              {i < weather.length-1 && <Divider/>}
+            </div>;
+          })}
+          <Body size={11} color={C.muted} style={{marginTop:8}}>✓ Great · ! Caution · ✕ Rest day candidate</Body>
+        </Card>
+      </div>;
+    }
+
+    // ── Main App ───────────────────────────────────────────────────────────
+    function App() {
+      const [tab,setTab] = useState("weather");
+      const [acts,setActs] = useState([]);
+      const [strava,setStrava] = useState("loading");
+      const [note,setNote] = useState("");
+      const [genNote,setGenNote] = useState(false);
+      const [sessionType,setSessionType] = useState("");
+      const [sessionDist,setSessionDist] = useState(5);
+      const [data,setData] = useState({
+        nightFeeds:2,hrv:45,bodyBattery:62,sleepScore:68,
+        vaporMiles:0,pelvic:"green",calcium:800,vitD:12,
+        book:"Atomic Habits — James Clear",
+        calories:0,protein:0,weight:0,
+        nutritionLog:[]
+      });
+
+      const save = updates => {
+        const next={...data,...updates};
+        setData(next);
+        try{localStorage.setItem("rd_v8",JSON.stringify(next));}catch(e){}
+      };
+
+      useEffect(()=>{
+        try{const d=localStorage.getItem("rd_v8");if(d)setData(JSON.parse(d));}catch(e){}
+        try{const n=localStorage.getItem("rd_note");if(n)setNote(n);}catch(e){}
+        (async()=>{
+          let rt=localStorage.getItem("rd_rt");
+          const storeRt=t=>{try{localStorage.setItem("rd_rt",t);}catch(e){}};
+          if(rt){
+            try{
+              const r=await strPost({client_id:STRAVA_CLIENT_ID,client_secret:STRAVA_CLIENT_SECRET,grant_type:"refresh_token",refresh_token:rt});
+              if(r.access_token){storeRt(r.refresh_token);const a=await getActs(r.access_token);if(Array.isArray(a)&&a.length){setActs(a);setStrava("live");return;}}
+            }catch(e){}
+          }
+          try{
+            const r=await strPost({client_id:STRAVA_CLIENT_ID,client_secret:STRAVA_CLIENT_SECRET,code:STRAVA_AUTH_CODE,grant_type:"authorization_code"});
+            if(r.access_token){storeRt(r.refresh_token);const a=await getActs(r.access_token);if(Array.isArray(a)){setActs(a);setStrava("live");return;}}
+          }catch(e){}
+          setActs(DEMO);setStrava("demo");
+        })();
+      },[]);
+
+      const days=daysTo(RACE_DATE), wk=wkStats(acts), aw=calcACWR(acts);
+      const predS=predict(acts)||PB_SECS+300, onPB=predS<PB_SECS;
+      const awS=aw.ratio<0.8?"amber":aw.ratio<=1.3?"green":aw.ratio<=1.5?"amber":"red";
+      const rRun=acts.filter(a=>a.type==="Run")[0];
+      const mumTax=(1-data.sleepScore/100)*0.08+data.nightFeeds*0.015;
+      const rawPace=rRun?spk(rRun.average_speed):"--:--";
+      const adjPace=rRun?spk(rRun.average_speed*(1+mumTax)):"--:--";
+      const conf=Math.min(100,Math.round(
+        (aw.ratio>=0.8&&aw.ratio<=1.3?20:10)+(data.sleepScore/100)*15+(data.bodyBattery/100)*15+
+        (data.pelvic==="green"?10:data.pelvic==="amber"?5:0)+Math.max(0,10-data.nightFeeds*2)+
+        Math.min(15,(data.vaporMiles/VFLY_TARGET)*15)+(days>21?15:days>14?12:days>7?8:5)
+      ));
+
+      const genCoach=async()=>{
+        setGenNote(true);
+        try{
+          // Pull all runs and analyse against target paces
+          const allRuns = acts.filter(a=>a.type==="Run");
+          const recent = allRuns.slice(0,7);
+          
+          // Analyse each run
+          const runAnalysis = recent.map(r => {
+            const distKm = (r.distance/1000).toFixed(1);
+            const pace = spk(r.average_speed);
+            const paceNum = 1000/r.average_speed; // seconds per km
+            const date = new Date(r.start_date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+            // Determine expected pace zone based on distance
+            let expectedZone, status;
+            if(distKm < 4) { expectedZone = "recovery (8:30-10:00/km)"; status = paceNum > 510 ? "on target" : "too fast"; }
+            else if(distKm < 7) { expectedZone = "base (7:00-7:30/km)"; status = (paceNum >= 420 && paceNum <= 450) ? "on target" : paceNum < 420 ? "too fast" : "too slow"; }
+            else if(distKm < 10) { expectedZone = "base/tempo (6:30-7:15/km)"; status = (paceNum >= 390 && paceNum <= 435) ? "on target" : paceNum < 390 ? "too fast" : "too slow"; }
+            else { expectedZone = "long run (7:00-8:00/km)"; status = (paceNum >= 420 && paceNum <= 480) ? "on target" : paceNum < 420 ? "too fast" : "too slow"; }
+            return `${date}: ${distKm}km @ ${pace}/km — ${status} (expected ${expectedZone}) | HR avg: ${r.average_heartrate ? Math.round(r.average_heartrate)+"bpm" : "not recorded"} | Cadence: ${r.average_cadence ? Math.round(r.average_cadence*2)+"spm" : "not recorded"}`;
+          }).join("\n");
+
+          // Calculate sessions this week vs last week
+          const thisWeekRuns = acts.filter(a=>a.type==="Run" && (Date.now()-new Date(a.start_date)<7*86400000));
+          const lastWeekRuns = acts.filter(a=>a.type==="Run" && (Date.now()-new Date(a.start_date)<14*86400000) && (Date.now()-new Date(a.start_date)>=7*86400000));
+          const thisWeekKm = thisWeekRuns.reduce((s,r)=>s+r.distance/1000,0).toFixed(1);
+          const lastWeekKm = lastWeekRuns.reduce((s,r)=>s+r.distance/1000,0).toFixed(1);
+
+          const prompt = `You are David Goggins holding Laura Bailey personally accountable for her training. Laura is a 6-month postpartum runner (C-section, breastfeeding) targeting a half marathon PB of sub 2:02:00 on 31 May 2026. She has ${days} days to race day.
+
+LIVE STRAVA DATA — LAST 7 RUNS:
+${runAnalysis}
+
+WEEKLY LOAD:
+This week: ${thisWeekKm}km in ${thisWeekRuns.length} runs
+Last week: ${lastWeekKm}km in ${lastWeekRuns.length} runs
+ACWR: ${aw.ratio.toFixed(2)} (${aw.ratio>=0.8&&aw.ratio<=1.3?"in safe zone":"OUTSIDE safe zone"})
+Predicted finish time: ${sts(predS)} (target: 2:01:59)
+
+RECOVERY:
+Sleep score: ${data.sleepScore}/100
+Body Battery: ${data.bodyBattery}/100
+Night feeds last night: ${data.nightFeeds}
+Confidence score: ${conf}/100
+
+YOUR TASK:
+1. Call out any runs where she went too fast on recovery/easy days — that's ego, not training
+2. Call out any runs where she went too slow on base days — that's making excuses
+3. Give one brutal honest assessment of where her predicted finish time sits vs her target
+4. Tell her exactly ONE thing she must do this week — no negotiation
+5. Acknowledge the postpartum dual load but do NOT use it as an excuse — use it as proof of strength
+
+Be Goggins. Direct. No fluff. No softening. Max 6 sentences. She chose this. Hold her to it.`;
+
+          const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
+          const d=await r.json();
+          const t=d.content?.[0]?.text||"No excuses. Get out there.";
+          setNote(t);localStorage.setItem("rd_note",t);
+        }catch(e){setNote("No excuses. No hiding. Get out there and earn it.");}
+        setGenNote(false);
+      };
+
+      const navs=[
+        {id:"weather",label:"🌤️ Today"},
+        {id:"command",label:"🏁 Command"},
+        {id:"training",label:"📊 Training"},
+        {id:"mum",label:"🍼 Mum Hub"},
+        {id:"fuel",label:"🍽️ Fuel"},
+      ];
+
+      return <div style={{minHeight:"100vh",background:C.bg,paddingBottom:80}}>
+
+        {/* HEADER */}
+        <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:"20px 16px 18px",boxShadow:C.shadow}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+            <div>
+              <div style={{fontFamily:C.fR,fontSize:10,fontWeight:700,letterSpacing:2.5,color:C.gold,textTransform:"uppercase",marginBottom:5}}>Race Day Intelligence</div>
+              <div style={{fontFamily:C.fR,fontSize:30,fontWeight:800,color:C.text,lineHeight:1.1,letterSpacing:"-0.5px"}}>Laura Bailey</div>
+              <div style={{fontFamily:C.fB,fontSize:12,color:C.muted,marginTop:6}}>
+                {strava==="live"?<><Dot s="green"/><span style={{color:C.green,fontWeight:600}}>Strava Connected</span></>:strava==="demo"?<><Dot s="amber"/><span style={{color:C.amber,fontWeight:600}}>Demo Mode</span></>:<span>Connecting...</span>}
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:C.fR,fontSize:9,fontWeight:600,letterSpacing:2,color:C.muted,textTransform:"uppercase",marginBottom:2}}>Race Day In</div>
+              <div style={{fontFamily:C.fN,fontSize:58,color:days<=14?C.amber:C.gold,lineHeight:1}}>{days}</div>
+              <div style={{fontFamily:C.fR,fontSize:9,fontWeight:600,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>Days</div>
+            </div>
+          </div>
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+              <span style={{fontFamily:C.fR,fontSize:12,fontWeight:600,color:C.muted}}>Race Confidence</span>
+              <span style={{fontFamily:C.fN,fontSize:18,color:C.gold}}>{conf}<span style={{fontSize:12,fontFamily:C.fB,color:C.muted,fontWeight:400}}>/100</span></span>
+            </div>
+            <div style={{height:7,background:C.borderL,borderRadius:4}}>
+              <div style={{height:"100%",width:`${conf}%`,background:`linear-gradient(90deg,${C.gold},${conf>=70?C.green:C.amber})`,borderRadius:4,transition:"width 1.5s ease"}}/>
+            </div>
+          </div>
+        </div>
+
+        {/* NAV */}
+        <div style={{display:"flex",background:C.card,borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:9,overflowX:"auto"}}>
+          {navs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:"0 0 auto",padding:"13px 14px",fontFamily:C.fR,fontSize:12,fontWeight:tab===t.id?700:500,background:"none",border:"none",borderBottom:`2.5px solid ${tab===t.id?C.gold:"transparent"}`,color:tab===t.id?C.gold:C.muted,cursor:"pointer",whiteSpace:"nowrap"}}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{padding:"20px 16px"}}>
+
+          {/* ── TODAY / WEATHER ── */}
+          {tab==="weather"&&<>
+            <STitle color={C.blue}>Today's Run Planner</STitle>
+
+            {/* Session selector */}
+            <Card style={{marginBottom:14}}>
+              <CTitle>What's your session today?</CTitle>
+              <Body size={13} color={C.muted} style={{marginBottom:12}}>Select your session type for a location recommendation</Body>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                {[
+                  {id:"recovery",label:"Recovery Run",sub:"Easy, conversational"},
+                  {id:"base",label:"Base Run",sub:"Comfortable effort"},
+                  {id:"tempo",label:"Tempo Run",sub:"Comfortably hard"},
+                  {id:"threshold",label:"Threshold",sub:"Hard, sustained effort"},
+                  {id:"intervals",label:"Intervals",sub:"Speed work"},
+                  {id:"long",label:"Long Run",sub:"Slow and steady"},
+                ].map(s=>(
+                  <button key={s.id} onClick={()=>setSessionType(s.id)} style={{padding:"10px 12px",fontFamily:C.fB,fontSize:12,fontWeight:sessionType===s.id?700:400,background:sessionType===s.id?C.goldL:C.bg,color:sessionType===s.id?C.goldD:C.mid,border:`1.5px solid ${sessionType===s.id?C.gold:C.border}`,borderRadius:10,cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                    <div style={{fontWeight:600}}>{s.label}</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{s.sub}</div>
+                  </button>
+                ))}
+              </div>
+              {sessionType&&<>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <Body size={13} color={C.mid} style={{whiteSpace:"nowrap"}}>Approx distance:</Body>
+                  <input type="range" min={1} max={21} value={sessionDist} onChange={e=>setSessionDist(+e.target.value)} style={{flex:1,accentColor:C.gold}}/>
+                  <Body size={14} style={{fontWeight:700,color:C.gold,whiteSpace:"nowrap",minWidth:40}}>{sessionDist}km</Body>
+                </div>
+              </>}
+            </Card>
+
+            <WeatherPanel sessionType={sessionType} sessionDist={sessionDist}/>
+          </>}
+
+          {/* ── COMMAND ── */}
+          {tab==="command"&&<>
+            <STitle color={C.gold}>Race Command Centre</STitle>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+              <Card style={{borderColor:onPB?C.green+"99":C.amber+"99",boxShadow:`0 4px 24px ${onPB?C.green:C.amber}22`}}>
+                <CTitle color={onPB?C.green:C.amber}>Predicted Finish</CTitle>
+                <Big n={sts(predS)} size={24} color={onPB?C.green:C.amber}/>
+                <div style={{marginTop:10}}><Pill color={onPB?C.green:C.amber} bg={onPB?C.greenL:C.amberL}>{onPB?"PB on track":`${Math.round((predS-PB_SECS)/60)}min off`}</Pill></div>
+                <Body size={12} color={C.muted} style={{marginTop:8}}>Target: 2:01:59</Body>
+              </Card>
+              <Card><CTitle>Confidence</CTitle><div style={{display:"flex",justifyContent:"center",paddingTop:4}}><Gauge val={conf}/></div></Card>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+              {[{l:"This Week",v:wk.km.toFixed(1),u:"km"},{l:"Sessions",v:wk.count,u:"runs"},{l:"Weeks Left",v:Math.ceil(days/7),u:"weeks",c:C.gold}].map(({l,v,u,c})=>(
+                <Card key={l}><CTitle>{l}</CTitle><Big n={v} size={28} color={c}/><Body size={12} color={C.muted} style={{marginTop:3}}>{u}</Body></Card>
+              ))}
+            </div>
+
+            {strava==="demo"&&<Card style={{borderColor:C.amber+"99",marginBottom:14}}>
+              <CTitle color={C.amber}>Reconnect Strava</CTitle>
+              <Body style={{marginBottom:10}}>Auth code expired. Visit this URL then paste the redirect URL into Claude:</Body>
+              <div style={{background:C.bg,border:`1px solid ${C.border}`,padding:12,borderRadius:8,fontSize:11,color:C.muted,wordBreak:"break-all",lineHeight:1.8,fontFamily:"monospace"}}>
+                https://www.strava.com/oauth/authorize?client_id=230220&response_type=code&redirect_uri=http://localhost&approval_prompt=force&scope=activity:read_all
+              </div>
+            </Card>}
+
+            {days<=7&&<Card gold>
+              <CTitle color={C.gold}>Race Week Checklist</CTitle>
+              {["Vaporflys clean and packed","Pump before race gun","Garmin charged and plan loaded","Electrolyte belt packed","Race nutrition prepped","Easy 20-min shakeout Thursday","Rest day Friday","Early bed Saturday night"].map((item,i,arr)=>(
+                <div key={i} style={{display:"flex",gap:12,padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.borderL}`:"none",alignItems:"center"}}>
+                  <span style={{color:C.gold,fontWeight:700,fontSize:16}}>▹</span>
+                  <Body>{item}</Body>
+                </div>
+              ))}
+            </Card>}
+          </>}
+
+          {/* ── TRAINING ── */}
+          {tab==="training"&&<>
+            <STitle>Training Intelligence</STitle>
+            <Card style={{marginBottom:14}}>
+              <CTitle>Acute:Chronic Workload Ratio — Injury Risk</CTitle>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:14}}>
+                <div>
+                  <Big n={aw.ratio.toFixed(2)} size={52} color={sc[awS]}/>
+                  <div style={{marginTop:10}}><Pill color={sc[awS]} bg={sb[awS]}><Dot s={awS}/>{awS==="green"?"Sweet spot":awS==="amber"?"Monitor carefully":"Reduce load now"}</Pill></div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <Body size={13} color={C.mid}>Acute: {aw.ac.toFixed(1)}km</Body>
+                  <Body size={13} color={C.mid}>Chronic: {aw.ch.toFixed(1)}km/wk</Body>
+                  <Body size={12} color={C.muted} style={{marginTop:4}}>0.8–1.3 = safe zone</Body>
+                </div>
+              </div>
+              <div style={{height:10,background:C.borderL,borderRadius:5,position:"relative"}}>
+                <div style={{position:"absolute",left:"20%",height:"100%",width:"46%",background:C.greenL,borderRadius:3}}/>
+                <div style={{position:"absolute",top:"50%",transform:"translate(-50%,-50%)",left:`${Math.min(94,Math.max(4,((aw.ratio-0.5)/1.5)*100))}%`,width:16,height:16,borderRadius:"50%",background:sc[awS],border:"2px solid #fff",boxShadow:`0 2px 8px ${sc[awS]}55`,transition:"left 1s ease"}}/>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:7}}>
+                {["0.5","0.8","1.3","1.5","2.0"].map(v=><Body key={v} size={11} color={C.muted}>{v}</Body>)}
+              </div>
+            </Card>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+              <Card>
+                <CTitle>Cadence</CTitle>
+                <Big n={wk.cad>0?Math.round(wk.cad):"--"} unit="spm" color={wk.cad>=170?C.green:C.amber} size={38}/>
+                <div style={{marginTop:10}}><Bar pct={wk.cad>0?(wk.cad/185)*100:0} color={wk.cad>=170?C.green:C.amber} bg={wk.cad>=170?C.greenL:C.amberL}/></div>
+                <Body size={12} color={C.muted} style={{marginTop:5}}>Target: 170+ spm</Body>
+              </Card>
+              <Card>
+                <CTitle>Body Battery</CTitle>
+                <Big n={data.bodyBattery} unit="/100" color={data.bodyBattery>=60?C.green:C.amber} size={38}/>
+                <div style={{marginTop:10}}><Bar pct={data.bodyBattery} color={data.bodyBattery>=60?C.green:C.amber} bg={data.bodyBattery>=60?C.greenL:C.amberL}/></div>
+                <input type="range" min={0} max={100} value={data.bodyBattery} onChange={e=>save({bodyBattery:+e.target.value})} style={{marginTop:8,accentColor:C.gold}}/>
+              </Card>
+            </div>
+
+            <Card style={{marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <CTitle>Run Analysis — Live from Strava</CTitle>
+                {strava==="demo"&&<Pill color={C.amber} bg={C.amberL}>Demo Data</Pill>}
+              </div>
+              {acts.filter(a=>a.type==="Run").slice(0,6).map((r,i,arr)=>{
+                const distKm = r.distance/1000;
+                const paceNum = 1000/r.average_speed;
+                let status, statusColor, statusBg;
+                if(distKm < 4) { 
+                  status = paceNum > 510 ? "✓ On target" : "⚡ Too fast for recovery";
+                  statusColor = paceNum > 510 ? C.green : C.amber;
+                  statusBg = paceNum > 510 ? C.greenL : C.amberL;
+                } else if(distKm < 10) {
+                  status = (paceNum >= 400 && paceNum <= 450) ? "✓ On target" : paceNum < 400 ? "⚡ Too fast" : "↓ Below target pace";
+                  statusColor = (paceNum >= 400 && paceNum <= 450) ? C.green : C.amber;
+                  statusBg = (paceNum >= 400 && paceNum <= 450) ? C.greenL : C.amberL;
+                } else {
+                  status = (paceNum >= 420 && paceNum <= 500) ? "✓ On target" : paceNum < 420 ? "⚡ Too fast" : "↓ Below target";
+                  statusColor = (paceNum >= 420 && paceNum <= 500) ? C.green : C.amber;
+                  statusBg = (paceNum >= 420 && paceNum <= 500) ? C.greenL : C.amberL;
+                }
+                return <div key={i}>
+                  <div style={{padding:"12px 0"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                      <div>
+                        <Body size={14} style={{fontWeight:600,color:C.text}}>{r.name}</Body>
+                        <Body size={12} color={C.muted} style={{marginTop:2}}>{new Date(r.start_date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</Body>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontFamily:C.fN,fontSize:20,color:C.gold,lineHeight:1}}>{distKm.toFixed(1)} km</div>
+                        <Body size={12} color={C.muted} style={{marginTop:2}}>{spk(r.average_speed)}/km</Body>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <Pill color={statusColor} bg={statusBg}>{status}</Pill>
+                      {r.average_heartrate&&<Pill color={C.blue} bg={C.blueL}>❤️ {Math.round(r.average_heartrate)}bpm</Pill>}
+                      {r.average_cadence&&<Pill color={C.mid} bg={C.borderL}>👟 {Math.round(r.average_cadence*2)}spm</Pill>}
+                    </div>
+                  </div>
+                  {i<arr.length-1&&<Divider/>}
+                </div>;
+              })}
+            </Card>
+
+            <Card style={{marginBottom:14}}>
+              <CTitle>Recovery Inputs — Update from Garmin</CTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                {[["hrv","HRV"],["bodyBattery","Body Battery"],["sleepScore","Sleep"]].map(([k,l])=>(
+                  <div key={k}>
+                    <Body size={12} color={C.muted} style={{marginBottom:7}}>{l}</Body>
+                    <input type="number" value={data[k]} onChange={e=>save({[k]:+e.target.value})} style={{width:"100%",background:C.bg,border:`1.5px solid ${C.border}`,color:C.text,padding:"9px 10px",borderRadius:8,fontFamily:C.fN,fontSize:20,outline:"none"}}/>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card gold>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div>
+                  <CTitle color={C.gold}>Goggins Accountability Brief</CTitle>
+                  <div style={{fontFamily:C.fR,fontSize:17,fontWeight:700,color:C.text}}>Auto-Analysis from Live Strava Data</div>
+                </div>
+                <button onClick={genCoach} disabled={genNote} style={{padding:"10px 16px",fontFamily:C.fR,fontSize:12,fontWeight:700,background:genNote?C.bg:C.gold,color:genNote?C.muted:"#fff",border:`1.5px solid ${genNote?C.border:C.gold}`,borderRadius:8,cursor:"pointer",boxShadow:genNote?"none":C.shadowG,whiteSpace:"nowrap"}}>
+                  {genNote?"Generating...":"Generate"}
+                </button>
+              </div>
+              {note
+                ?<div style={{fontFamily:C.fB,fontSize:14,lineHeight:1.8,color:C.text,borderLeft:`3px solid ${C.gold}`,background:C.goldL,padding:"14px 14px 14px 18px",borderRadius:"0 8px 8px 0",fontStyle:"italic"}}>{note}</div>
+                :<Body color={C.muted}>Tap Generate — Claude reads your Strava runs automatically and delivers a Goggins-style accountability brief. No manual input needed.</Body>
+              }
+            </Card>
+          </>}
+
+          {/* ── MUM HUB ── */}
+          {tab==="mum"&&<>
+            <div style={{fontFamily:C.fR,fontSize:24,fontWeight:800,color:C.pink,marginBottom:6}}>The Mum Hub</div>
+            <Body size={11} color={C.muted} style={{marginBottom:20,textTransform:"uppercase",letterSpacing:1.5}}>Running a race + fuelling a human. Both count.</Body>
+
+            <Card pink style={{marginBottom:14}}>
+              <CTitle color={C.pink}>The Mum Tax Calculator</CTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:10,alignItems:"center",marginTop:12}}>
+                <div style={{background:C.bg,padding:"14px 10px",borderRadius:12,textAlign:"center"}}>
+                  <Body size={11} color={C.muted} style={{textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Actual Pace</Body>
+                  <Big n={rawPace} unit="/km" size={26} color={C.text}/>
+                </div>
+                <div style={{color:C.muted,fontSize:20,fontFamily:C.fR}}>→</div>
+                <div style={{background:C.pinkL,padding:"14px 10px",borderRadius:12,textAlign:"center"}}>
+                  <Body size={11} color={C.pink} style={{textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Mum-Tax Adj.</Body>
+                  <Big n={adjPace} unit="/km" size={26} color={C.pink}/>
+                </div>
+              </div>
+              <Body style={{marginTop:12}}>Without {data.nightFeeds} night feed{data.nightFeeds!==1?"s":""} and sleep deficit, this is your equivalent performance.</Body>
+            </Card>
+
+            <Card style={{marginBottom:14}}>
+              <CTitle>Night Feeds Last Night</CTitle>
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                {[0,1,2,3,4,5].map(n=>(
+                  <button key={n} onClick={()=>save({nightFeeds:n})} style={{flex:1,padding:"13px 0",fontFamily:C.fN,fontSize:20,background:data.nightFeeds===n?C.pink:C.bg,color:data.nightFeeds===n?"#fff":C.muted,border:`1.5px solid ${data.nightFeeds===n?C.pink:C.border}`,borderRadius:9,cursor:"pointer",transition:"all 0.15s"}}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <div style={{fontFamily:C.fB,fontSize:13,color:C.mid,marginTop:10,padding:"10px 12px",background:C.bg,borderRadius:9,lineHeight:1.6}}>
+                {data.nightFeeds===0?"Full night — maximise today's session":data.nightFeeds<=2?"Manageable — stick to the plan":"High feed night — easy run or rest today"}
+              </div>
+            </Card>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+              <Card>
+                <CTitle>Sleep Score</CTitle>
+                <Big n={data.sleepScore} unit="/100" color={data.sleepScore>=70?C.green:data.sleepScore>=50?C.amber:C.red} size={36}/>
+                <input type="range" min={0} max={100} value={data.sleepScore} onChange={e=>save({sleepScore:+e.target.value})} style={{marginTop:10,accentColor:C.pink}}/>
+              </Card>
+              <Card>
+                <CTitle>Calorie Target</CTitle>
+                <Big n={(2200+400+Math.round(wk.km/7*65)).toLocaleString()} unit="kcal" color={C.pink} size={26}/>
+                <Body size={12} color={C.muted} style={{marginTop:8,lineHeight:2}}>
+                  <div>Base 2,200 + BF +400</div>
+                  <div>Training +{Math.round(wk.km/7*65)}</div>
+                </Body>
+              </Card>
+            </div>
+
+            <Card style={{marginBottom:14}}>
+              <CTitle>Key Nutrients — Medichecks 5th May</CTitle>
+              {[{k:"calcium",l:"Calcium",max:1300,u:"mg",c:C.pink,bg:C.pinkL},{k:"vitD",l:"Vitamin D",max:15,u:"μg",c:C.amber,bg:C.amberL}].map(({k,l,max,u,c,bg})=>(
+                <div key={k} style={{marginBottom:16}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <Body size={13} color={C.mid}>{l}</Body>
+                    <Pill color={c} bg={bg}>{data[k]} / {max} {u}</Pill>
+                  </div>
+                  <Bar pct={(data[k]/max)*100} color={c} bg={bg}/>
+                  <input type="range" min={0} max={max} value={data[k]} onChange={e=>save({[k]:+e.target.value})} style={{marginTop:8,accentColor:c}}/>
+                </div>
+              ))}
+              <Body size={13} color={C.muted} style={{padding:"10px 12px",background:C.bg,borderRadius:9}}>Ferritin, TSH and B12 unlock after Medichecks on 5th May</Body>
+            </Card>
+
+            <Card style={{marginBottom:14}}>
+              <CTitle>Pelvic Floor + Core — Post C-Section, Physio Cleared</CTitle>
+              <Body style={{marginBottom:12}}>Weekly check as training load increases.</Body>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                {["green","amber","red"].map(s=>(
+                  <button key={s} onClick={()=>save({pelvic:s})} style={{padding:"14px 6px",fontFamily:C.fR,fontSize:12,fontWeight:data.pelvic===s?700:500,background:data.pelvic===s?sb[s]:C.bg,border:`1.5px solid ${data.pelvic===s?sc[s]:C.border}`,borderRadius:10,cursor:"pointer",color:sc[s],transition:"all 0.15s"}}>
+                    {s==="green"?"All Good":s==="amber"?"Monitor":"Flag it"}
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+            <Card pink>
+              <CTitle color={C.pink}>Hormone Awareness Note</CTitle>
+              <div style={{fontFamily:C.fB,fontSize:14,lineHeight:1.8,color:C.text,borderLeft:`3px solid ${C.pink}`,background:C.pinkL,padding:"14px 14px 14px 18px",borderRadius:"0 8px 8px 0",marginTop:12}}>
+                {data.sleepScore<55?"Elevated cortisol from sleep deprivation is slowing muscle repair. Your actual effort is higher than your metrics suggest. Easy run or rest today.":data.nightFeeds>=3?"Multiple feeds means high prolactin — great for milk supply, but fatigue runs deeper than your watch can measure. Trust effort over pace today.":data.bodyBattery<40?"Low Body Battery combined with breastfeeding creates a double system load. Prioritise protein, sleep, and one fewer session if needed.":"Recovery markers solid. Prolactin elevated as expected while feeding, cortisol manageable. Green light to train to plan today."}
+              </div>
+            </Card>
+          </>}
+
+          {/* ── FUEL ── */}
+          {tab==="fuel"&&<>
+            <STitle>Fuel &amp; Mind</STitle>
+
+            {/* NUTRITION TRACKER */}
+            <Card style={{marginBottom:14}}>
+              <CTitle>MacroFactor Daily Log</CTitle>
+              <Body size={13} color={C.muted} style={{marginBottom:14}}>Tap in your numbers from MacroFactor each day. Takes 10 seconds.</Body>
+              
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+                {[
+                  {k:"calories",l:"Calories",u:"kcal",color:C.gold,target:2200+400+Math.round(wk.km/7*65)},
+                  {k:"protein",l:"Protein",u:"g",color:C.green,target:130},
+                  {k:"weight",l:"Weight",u:"kg",color:C.blue,target:null},
+                ].map(({k,l,u,color,target})=>(
+                  <div key={k} style={{background:C.bg,borderRadius:12,padding:"12px 10px",textAlign:"center",border:`1.5px solid ${C.border}`}}>
+                    <Body size={11} color={C.muted} style={{marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{l}</Body>
+                    <input type="number" value={data[k]||""} onChange={e=>save({[k]:+e.target.value})}
+                      placeholder="0"
+                      style={{width:"100%",background:"transparent",border:"none",borderBottom:`2px solid ${color}`,color:C.text,padding:"4px 0",fontFamily:C.fN,fontSize:26,fontWeight:400,outline:"none",textAlign:"center"}}/>
+                    <Body size={11} color={color} style={{marginTop:4}}>{u}</Body>
+                    {target&&data[k]>0&&<div style={{marginTop:6}}>
+                      <Bar pct={(data[k]/target)*100} color={data[k]>=target?C.green:data[k]>=target*0.85?C.amber:C.red} bg={C.borderL}/>
+                      <Body size={10} color={C.muted} style={{marginTop:3}}>Target: {target}{u}</Body>
+                    </div>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Save to log button */}
+              <button onClick={()=>{
+                if(!data.calories && !data.protein && !data.weight) return;
+                const today = new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+                const entry = {date:today,calories:data.calories,protein:data.protein,weight:data.weight};
+                const log = [...(data.nutritionLog||[]).slice(-13), entry];
+                save({nutritionLog:log, calories:0, protein:0, weight:0});
+              }} style={{width:"100%",padding:"12px",fontFamily:C.fR,fontSize:13,fontWeight:700,background:C.gold,color:"#fff",border:"none",borderRadius:10,cursor:"pointer",marginBottom:14}}>
+                Save Today's Numbers
+              </button>
+
+              {/* Traffic light for tomorrow's run */}
+              {(()=>{
+                const tomorrowRun = wk.count > 0;
+                const calorieTarget = 2200+400+Math.round(wk.km/7*65);
+                const log = data.nutritionLog||[];
+                const lastEntry = log[log.length-1];
+                if(!lastEntry) return <Body size={13} color={C.muted}>Log today's numbers to get a pre-run fuel check.</Body>;
+                const calOk = lastEntry.calories >= calorieTarget * 0.9;
+                const protOk = lastEntry.protein >= 120;
+                const status = calOk && protOk ? "green" : (!calOk && !protOk) ? "red" : "amber";
+                const msg = status==="green" ? "Well fuelled for tomorrow's run" : status==="amber" ? `${!calOk?"Calories low — eat more tonight. ":""}${!protOk?"Protein needs boosting — add a protein source to your next meal.":""}` : "Under-fuelled — you need to eat significantly more tonight before tomorrow's session";
+                return <div style={{background:sb[status],border:`1.5px solid ${sc[status]}`,borderRadius:10,padding:"12px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
+                  <div style={{width:12,height:12,borderRadius:"50%",background:sc[status],marginTop:3,flexShrink:0}}/>
+                  <Body size={13} color={sc[status]} style={{fontWeight:600}}>{msg}</Body>
+                </div>;
+              })()}
+
+              {/* 7-day log */}
+              {(data.nutritionLog||[]).length > 0 && <>
+                <div style={{marginTop:14}}>
+                  <CTitle>Recent Log</CTitle>
+                  {[...(data.nutritionLog||[])].reverse().slice(0,7).map((entry,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:i<6?`1px solid ${C.borderL}`:"none"}}>
+                      <Body size={12} color={C.mid} style={{fontWeight:600}}>{entry.date}</Body>
+                      <div style={{display:"flex",gap:12}}>
+                        <Body size={12} color={C.gold}>{entry.calories} kcal</Body>
+                        <Body size={12} color={C.green}>{entry.protein}g protein</Body>
+                        {entry.weight>0&&<Body size={12} color={C.blue}>{entry.weight}kg</Body>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>}
+            </Card>
+
+            <Card gold style={{marginBottom:14}}>
+              <CTitle color={C.gold}>Book Intelligence This Week</CTitle>
+              <input type="text" value={data.book} onChange={e=>save({book:e.target.value})} placeholder="Current Audible / Blinkist..." style={{width:"100%",background:C.bg,border:`1.5px solid ${C.border}`,color:C.text,padding:"12px 14px",borderRadius:9,fontFamily:C.fB,fontSize:14,marginBottom:14,outline:"none"}}/>
+              <div style={{fontFamily:C.fB,fontSize:14,lineHeight:1.8,color:C.text,borderLeft:`3px solid ${C.gold}`,background:C.goldL,padding:"14px 14px 14px 18px",borderRadius:"0 8px 8px 0"}}>
+                {data.book.toLowerCase().includes("atomic")?"You don't rise to the level of your goals — you fall to the level of your systems. Every run logged, every feed survived, every fuelling choice is a vote for the identity of Laura Bailey, half marathon runner. Cast enough votes.":data.book.toLowerCase().includes("goggins")||data.book.toLowerCase().includes("hurt")?"The most important conversations are the ones you have with yourself. At mile 10, when the baby was up at 3am — what story do you tell yourself? Make it the right one.":data.book.toLowerCase().includes("mindset")?"Growth mindset: your abilities are not fixed. Every hard session grows your capability. The woman crossing that finish line is being built right now.":"Use your run time wisely. The best athletes use aerobic training as thinking time. What insight from this book applies to your race strategy this week?"}
+              </div>
+            </Card>
+
+            <Card style={{marginBottom:14}}>
+              <CTitle>Race Day Fuelling Plan</CTitle>
+              {[
+                {t:"Night before",f:"Pasta or rice. Nothing new. 750ml water."},
+                {t:"2 hours before gun",f:"Porridge + banana + honey. 500ml water. Pump."},
+                {t:"30 min before",f:"Energy gel + 250ml water. Vaseline on feet."},
+                {t:"Mile 4–5 (6–8km)",f:"First gel. Sip at every water station."},
+                {t:"Mile 8–9 (12–14km)",f:"Second gel. Electrolyte if available."},
+                {t:"Mile 11+ (17km+)",f:"Nothing new. Trust the prep. Run your race."},
+                {t:"Finish line",f:"Protein + carbs within 30 min. Nurse or pump. Celebrate everything."},
+              ].map((item,i,arr)=>(
+                <div key={i}>
+                  <div style={{display:"flex",gap:14,padding:"12px 0",alignItems:"flex-start"}}>
+                    <div>
+                      <div style={{fontFamily:C.fR,fontSize:10,fontWeight:700,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>{item.t}</div>
+                      <Body size={14}>{item.f}</Body>
+                    </div>
+                  </div>
+                  {i<arr.length-1&&<Divider/>}
+                </div>
+              ))}
+            </Card>
+
+            <Card>
+              <CTitle>AI Nutrition Analysis</CTitle>
+              <Body style={{marginTop:8,marginBottom:14}}>Send Claude a photo of any meal with this prompt for instant feedback:</Body>
+              <div style={{background:C.bg,border:`1.5px solid ${C.border}`,borderRadius:10,padding:16,fontFamily:C.fB,fontSize:13,color:C.mid,lineHeight:1.8,fontStyle:"italic"}}>
+                "I'm breastfeeding and training for a half marathon in {daysTo(RACE_DATE)} days. Here's my meal — does this support my training and milk supply? What would you add or change?"
+              </div>
+            </Card>
+          </>}
+
+        </div>
+        <div style={{textAlign:"center",padding:"24px 20px",fontFamily:C.fR,fontSize:11,fontWeight:500,color:C.borderL,letterSpacing:2,textTransform:"uppercase"}}>Race Day Intelligence — Laura Bailey — May 2026</div>
+      </div>;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
